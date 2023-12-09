@@ -97,9 +97,11 @@ local wk_mappings = {
 			a = "Assignments",
 			i = "implementation"
 		},
-		f = {
+		w = {
 			name = "Folder",
-			l = "list"
+			l = "list", -- lwl
+			a = "add" -- lwa
+			r = "remove" -- lwr
 		},
 	},
 }
@@ -163,7 +165,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		vim.keymap.set('n', '<leader>lwr', vim.lsp.buf.remove_workspace_folder, opts)
 
 		-- List workspace folders
-		vim.keymap.set('n', '<leader>lfl', function()
+		vim.keymap.set('n', '<leader>lwl', function()
 			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
 		end, opts)
 
