@@ -72,14 +72,25 @@ local wk_mappings = {
    d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
    w = { "<cmd>WhichKey<cr>", "WhichKey" },
    m = { "<cmd>Mason<cr>", "Mason" },
-   l = { "<cmd>LspInfo<cr>", "LspInfo" },
 }
 wk.register(wk_mappings, { prefix = "<leader>" })
 
+--- LSP Keybindings ---
 
+-- Open the diagnostics floating window.
+-- Space e: Show diagnostics in a floating window.
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
+
+-- Go to the previous diagnostic error.
+-- [d: Jump to the previous error or warning.
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
+
+-- Go to the next diagnostic error.
+-- ]d: Jump to the next error or warning.
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+
+-- Open the diagnostics location list.
+-- Space q: Open the location list for diagnostics.
 vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
 vim.api.nvim_create_autocmd('LspAttach', {
@@ -90,11 +101,23 @@ vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 -- Buffer local mappings.
 -- See `:help vim.lsp.*` for documentation on any of the below functions
 local opts = { buffer = ev.buf }
+
+-- gD: Jump to the declaration of the symbol under the cursor.
 vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+
+-- gd: Jump to the definition of the symbol under the cursor.
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+
+-- K: Show hover information for the symbol under the cursor.
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+
+-- gi: Jump to the implementation of the symbol under the cursor.
 vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+
+-- <C-k>: Show signature help for the symbol under the cursor.
 vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+
+-- Space wa: Add the current buffer's directory as a
 vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
 vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
 vim.keymap.set('n', '<space>wl', function()
