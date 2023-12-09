@@ -1,23 +1,23 @@
-vim.g.mapleader = " " -- Make sure to set `mapleader` before lazy so your mappings are correct
+vim.g.mapleader = " "
 
 -- lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
-    lazypath,
-  })
+	vim.fn.system({
+		"git",
+		"clone",
+		"--filter=blob:none",
+		"https://github.com/folke/lazy.nvim.git",
+		"--branch=stable", -- latest stable release
+		lazypath,
+	})
 end
 vim.opt.rtp:prepend(lazypath)
 
 -- mason :Mason
-local mason_plugin = {
-    "williamboman/mason.nvim",
-    'williamboman/mason-lspconfig.nvim'
+local mason_plugin      = {
+	"williamboman/mason.nvim",
+	'williamboman/mason-lspconfig.nvim'
 }
 
 -- lsp  :LspInfo
@@ -28,25 +28,25 @@ local lspconfig_plugin  = {
 }
 
 -- which key :WhichKey
-local which_key_plugin = {
-    "folke/which-key.nvim",
-    event = "VeryLazy",
-    init = function()
-        vim.o.timeout = true
-        vim.o.timeoutlen = 100
-    end,
-    opts = { }
+local which_key_plugin  = {
+	"folke/which-key.nvim",
+	event = "VeryLazy",
+	init = function()
+		vim.o.timeout = true
+		vim.o.timeoutlen = 100
+	end,
+	opts = {}
 }
 
 -- diffview :DiffViewOpen
-local diffview_plugin = {
-    'sindrets/diffview.nvim'
+local diffview_plugin   = {
+	'sindrets/diffview.nvim'
 }
 
 -- TreeSitter :TSInstall
 local treesitter_plugin = {
-'nvim-treesitter/nvim-treesitter'
-, 'nvim-treesitter/nvim-treesitter-textobjects'
+	'nvim-treesitter/nvim-treesitter'
+	, 'nvim-treesitter/nvim-treesitter-textobjects'
 }
 
 -- lazy
@@ -61,75 +61,126 @@ local lspconfig = require('lspconfig')
 
 -- :h mason-lspconfig-automatic-server-setup
 require("mason-lspconfig").setup_handlers {
-function (server_name) -- default handler (optional)
-    lspconfig[server_name].setup {}
-end,
+	function(server_name) -- default handler (optional)
+		lspconfig[server_name].setup {}
+	end,
 }
 
 -- which key
 local wk = require("which-key")
 local wk_mappings = {
-   d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
-   w = { "<cmd>WhichKey<cr>", "WhichKey" },
-   m = { "<cmd>Mason<cr>", "Mason" },
+	d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
+	w = { "<cmd>WhichKey<cr>", "WhichKey" },
+	m = { "<cmd>Mason<cr>", "Mason" },
+	l = {
+		name = "LSP",
+		e = {
+			name = "LSP -> Edit",
+			r = "Rename",
+			a = "Action",
+			f = "Format File"
+		},
+		v = {
+			name = "View",
+			d = "Diagnostics",
+			p = "Previous diagnostics",
+			n = "Next diagnostics",
+			l = "List",
+			h = "Hover",
+			s = "Signature",
+			t = "Type"
+		},
+		g = {
+			name = "Goto",
+			r = "references",
+			d = "Declaration",
+			a = "Assignments",
+			i = "implementation"
+		},
+		f = {
+			name = "Folder",
+			l = "list"
+		},
+	},
 }
 wk.register(wk_mappings, { prefix = "<leader>" })
 
---- LSP Keybindings ---
+-- View (lv)
+--
+-- Space lvd: Open diagnostics
+vim.keymap.set('n', '<leader>lvd', vim.diagnostic.open_float)
 
--- Open the diagnostics floating window.
--- Space e: Show diagnostics in a floating window.
-vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
+-- Space lvp: Previous diagnostic error
+vim.keymap.set('n', '<leader>lvp', vim.diagnostic.goto_prev)
 
--- Go to the previous diagnostic error.
--- [d: Jump to the previous error or warning.
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
+-- Space lvn: Next diagnostic error
+vim.keymap.set('n', '<leader>lvn', vim.diagnostic.goto_next)
 
--- Go to the next diagnostic error.
--- ]d: Jump to the next error or warning.
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-
--- Open the diagnostics location list.
--- Space q: Open the location list for diagnostics.
-vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
+-- Space lvl: Diagnostics location list
+vim.keymap.set('n', '<leader>lvl', vim.diagnostic.setloclist)
 
 vim.api.nvim_create_autocmd('LspAttach', {
-group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-callback = function(ev)
--- Enable completion triggered by <c-x><c-o>
-vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
--- Buffer local mappings.
--- See `:help vim.lsp.*` for documentation on any of the below functions
-local opts = { buffer = ev.buf }
+	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+	callback = function(ev)
+		-- Enable completion with `<leader>lc`
+		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
--- gD: Jump to the declaration of the symbol under the cursor.
-vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+		-- Buffer local mappings
+		local opts = { buffer = ev.buf }
 
--- gd: Jump to the definition of the symbol under the cursor.
-vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+		-- Go (Space lg)
+		--
+		-- Space lgr: Find references
+		vim.keymap.set('n', '<leader>lgr', vim.lsp.buf.references, opts)
 
--- K: Show hover information for the symbol under the cursor.
-vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+		-- Space lgd: Jump to declaration int i
+		vim.keymap.set('n', '<leader>lgd', vim.lsp.buf.declaration, opts)
 
--- gi: Jump to the implementation of the symbol under the cursor.
-vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+		-- Space lga: Jump to definition (assignement) var=val
+		vim.keymap.set('n', '<leader>lga', vim.lsp.buf.definition, opts)
 
--- <C-k>: Show signature help for the symbol under the cursor.
-vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+		-- Space lgi: Jump to implementation (gi)
+		vim.keymap.set('n', '<leader>lgi', vim.lsp.buf.implementation, opts)
 
--- Space wa: Add the current buffer's directory as a
-vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
-vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
-vim.keymap.set('n', '<space>wl', function()
-print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-end, opts)
-vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
-vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
-vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-vim.keymap.set('n', '<space>f', function()
-vim.lsp.buf.format { async = true }
-end, opts)
-end,
+
+		-- View (Space lv)
+		--
+		-- Space lvh: Hover information
+		vim.keymap.set('n', '<leader>lvh', vim.lsp.buf.hover, opts)
+
+		-- Space lvs: Signature help
+		vim.keymap.set('n', '<leader>lvs', vim.lsp.buf.signature_help, opts)
+
+		-- Space lvt: Type definition
+		vim.keymap.set('n', '<leader>lvt', vim.lsp.buf.type_definition, opts)
+
+		-- Workspace (Space lw)
+		--
+		-- Add workspace folder
+		vim.keymap.set('n', '<leader>lwa', vim.lsp.buf.add_workspace_folder, opts)
+
+		-- Remove workspace folder
+		vim.keymap.set('n', '<leader>lwr', vim.lsp.buf.remove_workspace_folder, opts)
+
+		-- List workspace folders
+		vim.keymap.set('n', '<leader>lfl', function()
+			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+		end, opts)
+
+		-- Edit (Space le)
+		-- Space ler: Edit Rename symbol
+		vim.keymap.set('n', '<leader>ler', vim.lsp.buf.rename, opts)
+
+		-- Space lea: Edit Code action
+		vim.keymap.set({ 'n', 'v' }, '<leader>lea', vim.lsp.buf.code_action, opts)
+
+		-- Space lef: Edit Format buffer
+		vim.keymap.set('n', '<leader>lef', function()
+			vim.lsp.buf.format { async = true }
+		end, opts)
+	end,
 })
 
+local foo = "abc"
+foo = "def"
+print(foo)
