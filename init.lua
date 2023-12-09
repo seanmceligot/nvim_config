@@ -100,7 +100,7 @@ local wk_mappings = {
 		w = {
 			name = "Folder",
 			l = "list", -- lwl
-			a = "add" -- lwa
+			a = "add", -- lwa
 			r = "remove" -- lwr
 		},
 	},
@@ -183,6 +183,3 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end,
 })
 
-local foo = "abc"
-foo = "def"
-print(foo)
