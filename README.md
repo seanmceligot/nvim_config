@@ -22,29 +22,29 @@ git clone https://github.com/seanmceligot/nvim_config.git ~/.config/nvim
 ### LSP keybindings
 
 - View
-    - <leader>lvd: Open diagnostics
-    - <leader>lvp: Previous diagnostics error
-    - <leader>lvn: Next diagnostics error
-    - <leader>lvl: Diagnostics location list
-    - <leader>lvh: Hover information
-    - <leader>lvs: Signature help
-    - <leader>lvt: Type definition
+    - Space lvd: Open diagnostics
+    - Space lvp: Previous diagnostics error
+    - Space lvn: Next diagnostics error
+    - Space lvl: Diagnostics location list
+    - Space lvh: Hover information
+    - Space lvs: Signature help
+    - Space lvt: Type definition
 
 - Goto
-    - <leader>lgr: Find references
-    - <leader>lgd: Jump to declaration
-    - <leader>lga: Jump to definition (assignment)
-    - <leader>lgi: Jump to implementation
+    - Space lgr: Find references
+    - Space lgd: Jump to declaration
+    - Space lga: Jump to definition (assignment)
+    - Space lgi: Jump to implementation
 
 - Workspce
-    - <leader>lwa: Add workspace folder
-    - <leader>lwr: Remove workspace folder
-    - <leader>lfl: List workspace folders
+    - Space lwa: Add workspace folder
+    - Space lwr: Remove workspace folder
+    - Space lfl: List workspace folders
 
 - Edit
-    - <leader>ler: Edit rename symbol
-    - <leader>lea: Edit code action
-    - <leader>lef: Edit format buffer
+    - Space ler: Edit rename symbol
+    - Space lea: Edit code action
+    - Space lef: Edit format buffer
 
 ### Resources
 
