@@ -237,7 +237,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
       },
       swap = {
         enable = true,
-        swap_next = 
+        swap_next =  {
           ['<leader>a'] = '@parameter.inner',
         },
         swap_previous = {
