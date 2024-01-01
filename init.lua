@@ -1,4 +1,8 @@
 vim.g.mapleader = " "
+vim.opt.clipboard = "unnamedplus"
+vim.o.guifont = "Hack_Nerd_Font:h10" -- text below applies for VimScript
+vim.cmd("colorscheme lunaperche")
+--vim.o.colorscheme 'habamax'
 
 -- lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -33,7 +37,7 @@ local which_key_plugin  = {
 	event = "VeryLazy",
 	init = function()
 		vim.o.timeout = true
-		vim.o.timeoutlen = 100
+		vim.o.timeoutlen = 300
 	end,
 	opts = {}
 }
@@ -74,30 +78,28 @@ local wk_mappings = {
 	d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
 	w = { "<cmd>WhichKey<cr>", "WhichKey" },
 	m = { "<cmd>Mason<cr>", "Mason" },
+	t = {
+		name = "Treesitter",
+		i = "incremental selection",
+	},
 	l = {
 		name = "LSP",
-		e = {
-			name = "LSP -> Edit",
-			r = "Rename",
-			a = "Action",
-			f = "Format File"
-		},
+		a = "action",
+		K = "hover",
+		F = "format entire file",
+		R = "rename",
+		r = "references",
+		e = "diagnostics",
+		D = "Declaration",
+		d = "Definition",
+		i = "implementation",
+		p = "Previous diagnostics",
+		n = "Next diagnostics",
+		l = "List",
+		h = "Hover",
+		t = "Type",
 		v = {
 			name = "View",
-			d = "Diagnostics",
-			p = "Previous diagnostics",
-			n = "Next diagnostics",
-			l = "List",
-			h = "Hover",
-			s = "Signature",
-			t = "Type"
-		},
-		g = {
-			name = "Goto",
-			r = "references",
-			d = "Declaration",
-			a = "Assignments",
-			i = "implementation"
 		},
 		w = {
 			name = "Folder",
@@ -112,21 +114,24 @@ wk.register(wk_mappings, { prefix = "<leader>" })
 -- View (lv)
 --
 -- Space lvd: Open diagnostics
-vim.keymap.set('n', '<leader>lvd', vim.diagnostic.open_float)
+--
+vim.keymap.set('n', '<leader>lD', vim.lsp.buf.declaration, opts)
+vim.keymap.set('n', '<leader>ld', vim.lsp.buf.definition, opts)
+vim.keymap.set('n', '<leader>le', vim.diagnostic.open_float)
 
 -- Space lvp: Previous diagnostic error
-vim.keymap.set('n', '<leader>lvp', vim.diagnostic.goto_prev)
+vim.keymap.set('n', '<leader>lp', vim.diagnostic.goto_prev)
 
 -- Space lvn: Next diagnostic error
-vim.keymap.set('n', '<leader>lvn', vim.diagnostic.goto_next)
+vim.keymap.set('n', '<leader>ln', vim.diagnostic.goto_next)
 
 -- Space lvl: Diagnostics location list
-vim.keymap.set('n', '<leader>lvl', vim.diagnostic.setloclist)
+vim.keymap.set('n', '<leader>ll', vim.diagnostic.setloclist)
 
 vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
 	callback = function(ev)
-		-- Enable completion with `<leader>lc`
+		-- :help omnnifunc defaults to: crtl-x ctrl o
 		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
 		-- Buffer local mappings
@@ -135,25 +140,28 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		-- Go (Space lg)
 		--
 		-- Space lgr: Find references
-		vim.keymap.set('n', '<leader>lgr', vim.lsp.buf.references, opts)
+		vim.keymap.set('n', '<leader>lr', vim.lsp.buf.references, opts)
 
 		-- Space lgd: Jump to declaration int i
-		vim.keymap.set('n', '<leader>lgd', vim.lsp.buf.declaration, opts)
+		vim.keymap.set('n', '<leader>lD', vim.lsp.buf.declaration, opts)
 
 		-- Space lga: Jump to definition (assignement) var=val
-		vim.keymap.set('n', '<leader>lga', vim.lsp.buf.definition, opts)
+		vim.keymap.set('n', '<leader>ld', vim.lsp.buf.definition, opts)
 
 		-- Space lgi: Jump to implementation (gi)
-		vim.keymap.set('n', '<leader>lgi', vim.lsp.buf.implementation, opts)
+		vim.keymap.set('n', '<leader>li', vim.lsp.buf.implementation, opts)
 
 
 		-- View (Space lv)
 		--
 		-- Space lvh: Hover information
 		vim.keymap.set('n', '<leader>lvh', vim.lsp.buf.hover, opts)
+		-- alternate shift -k for hover
+		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+		vim.keymap.set('n', '<leader>lK', vim.lsp.buf.hover, opts)
 
 		-- Space lvs: Signature help
-		vim.keymap.set('n', '<leader>lvs', vim.lsp.buf.signature_help, opts)
+		vim.keymap.set('n', '<leader>lt', vim.lsp.buf.signature_help, opts)
 
 		-- Space lvt: Type definition
 		vim.keymap.set('n', '<leader>lvt', vim.lsp.buf.type_definition, opts)
@@ -172,20 +180,18 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		end, opts)
 
 		-- Edit (Space le)
-		-- Space ler: Edit Rename symbol
-		vim.keymap.set('n', '<leader>ler', vim.lsp.buf.rename, opts)
+		vim.keymap.set('n', '<leader>lR', vim.lsp.buf.rename, opts)
 
-		-- Space lea: Edit Code action
-		vim.keymap.set({ 'n', 'v' }, '<leader>lea', vim.lsp.buf.code_action, opts)
+		vim.keymap.set({ 'n', 'v' }, '<leader>la', vim.lsp.buf.code_action, opts)
 
 		-- Space lef: Edit Format buffer
-		vim.keymap.set('n', '<leader>lef', function()
+		vim.keymap.set('n', '<leader>lF', function()
 			vim.lsp.buf.format { async = true }
 		end, opts)
 	end,
 })
 
- require('nvim-treesitter.configs').setup({
+local treesitter_config = {
     ensure_installed = { 'lua', 'python', 'bash', 'rust' },
 
     auto_install = false,
@@ -195,10 +201,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
     incremental_selection = {
       enable = true,
       keymaps = {
-        init_selection = '<c-space>',
-        node_incremental = '<c-space>',
+        init_selection = '<leader>ti',
+        node_incremental = '<Enter>',
         scope_incremental = '<c-s>',
-        node_decremental = '<M-space>',
+        node_decremental = '<BS>',
       },
     },
     textobjects = {
@@ -244,4 +250,8 @@ vim.api.nvim_create_autocmd('LspAttach', {
           ['<leader>A'] = '@parameter.inner',
         },
       },
-    }})
+    }}
+ require('nvim-treesitter.configs').setup(treesitter_config)
+
+
+
