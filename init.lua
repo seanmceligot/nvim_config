@@ -2,7 +2,8 @@ vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
 vim.o.guifont = "Hack_Nerd_Font:h10" -- text below applies for VimScript
 vim.cmd("colorscheme lunaperche")
---vim.o.colorscheme 'habamax'
+--vim.cmd("colorscheme quiet")
+--vim.cmd("colorscheme habamax")
 
 -- lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -17,6 +18,9 @@ if not vim.loop.fs_stat(lazypath) then
 	})
 end
 vim.opt.rtp:prepend(lazypath)
+
+
+
 
 -- mason :Mason
 local mason_plugin      = {
@@ -55,9 +59,41 @@ local treesitter_plugin = {
 	},
 }
 
+-- rainbow csv
+local rainbow_csv_plugin = {
+    'cameron-wags/rainbow_csv.nvim',
+    config = true,
+    ft = {
+        'csv',
+        'tsv',
+        'csv_semicolon',
+        'csv_whitespace',
+        'csv_pipe',
+        'rfc_csv',
+        'rfc_semicolon'
+    },
+    cmd = {
+        'RainbowDelim',
+        'RainbowDelimSimple',
+        'RainbowDelimQuoted',
+        'RainbowMultiDelim'
+    }
+}
+
+-- telescope
+local telescope_plugin = {
+    'nvim-telescope/telescope.nvim',
+    dependencies = {
+        'nvim-lua/plenary.nvim',
+        'BurntSushi/ripgrep',
+        'sharkdp/fd'
+    }
+}
+
 -- lazy
-local plugins = { mason_plugin, which_key_plugin, diffview_plugin, treesitter_plugin, lspconfig_plugin }
+local plugins = { mason_plugin, which_key_plugin, diffview_plugin, treesitter_plugin, lspconfig_plugin, rainbow_csv_plugin, telescope_plugin }
 require("lazy").setup(plugins)
+
 
 -- mason and lsp
 require("neodev").setup()
@@ -108,6 +144,13 @@ local wk_mappings = {
 			r = "remove" -- lwr
 		},
 	},
+    f = {
+        name = "Telescope",
+        f = { "<cmd>Telescope find_files<cr>", "Find Files" },
+        g = { "<cmd>Telescope live_grep<cr>", "Live Grep" },
+        b = { "<cmd>Telescope buffers<cr>", "Buffers" },
+        h = { "<cmd>Telescope help_tags<cr>", "Help Tags" },
+    },
 }
 wk.register(wk_mappings, { prefix = "<leader>" })
 
@@ -254,4 +297,14 @@ local treesitter_config = {
  require('nvim-treesitter.configs').setup(treesitter_config)
 
 
+-- Telescope setup
+local telescope = require('telescope')
+telescope.setup({
+    defaults = {
+        -- ... (your Telescope configuration options here)
+    }
+})
 
+vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='crimson'})
+vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
+vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
