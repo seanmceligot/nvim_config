@@ -1,9 +1,29 @@
 vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
 vim.o.guifont = "Hack_Nerd_Font:h10" -- text below applies for VimScript
-vim.cmd("colorscheme lunaperche")
+vim.cmd("colorscheme retrobox")
 --vim.cmd("colorscheme quiet")
 --vim.cmd("colorscheme habamax")
+
+-- supposed to exit terminal input mode with leader ESC
+--vim.api.nvim_set_keymap('t','<Leader><ESC>', '<C-\\><C-n>',{noremap = true})
+
+vim.api.nvim_set_keymap('n', ',r', ':only | horiz term cargo clippy<CR>', { noremap = true, silent = true })
+
+-- :RipGrep 
+vim.api.nvim_create_user_command('RipGrep', function(opts)
+    -- Temporarily change grepprg to ripgrep for this command
+    vim.cmd('set grepprg=rg\\ --vimgrep\\ -uu')
+    vim.cmd('grep ' .. opts.args)
+end, { nargs = '+' })
+
+-- :GitGrep
+vim.api.nvim_create_user_command('GitGrep', function(opts)
+    -- Temporarily change grepprg to ripgrep for this command
+    vim.cmd('set grepprg=git\\ --no-pager\\ grep\\ --no-color\\ -n')
+    vim.cmd('set grepformat=%f:%l:%m,%m\\ %f\\ match%ts,%f')
+    vim.cmd('grep ' .. opts.args)
+end, { nargs = '+' })
 
 -- lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -20,8 +40,6 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 
-
-
 -- mason :Mason
 local mason_plugin      = {
 	"williamboman/mason.nvim",
@@ -34,6 +52,7 @@ local lspconfig_plugin  = {
 	"neovim/nvim-lspconfig",
 	"folke/neodev.nvim",
 }
+
 
 -- which key :WhichKey
 local which_key_plugin  = {
@@ -111,6 +130,8 @@ require("mason-lspconfig").setup_handlers {
 -- which key
 local wk = require("which-key")
 local wk_mappings = {
+	r = { "<cmd>RipGrep <cword><cr>", "RipGrep <cword>" },
+	g = { "<cmd>GitGrep <cword><cr>", "GitGrep <cword>" },
 	d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
 	w = { "<cmd>WhichKey<cr>", "WhichKey" },
 	m = { "<cmd>Mason<cr>", "Mason" },
@@ -235,9 +256,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 local treesitter_config = {
-    ensure_installed = { 'lua', 'python', 'bash', 'rust' },
+    ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown' },
 
-    auto_install = false,
+    auto_install = true,
 
     highlight = { enable = true },
     indent = { enable = true },
@@ -308,3 +329,5 @@ telescope.setup({
 vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='crimson'})
 vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
 vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
+
+
