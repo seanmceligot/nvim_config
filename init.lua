@@ -8,7 +8,12 @@ vim.cmd("colorscheme retrobox")
 -- supposed to exit terminal input mode with leader ESC
 --vim.api.nvim_set_keymap('t','<Leader><ESC>', '<C-\\><C-n>',{noremap = true})
 
-vim.api.nvim_set_keymap('n', ',r', ':only | horiz term cargo clippy<CR>', { noremap = true, silent = true })
+--vim.api.nvim_set_keymap('n', ',c', ':only | horiz term cargo clippy<CR>', { noremap = true, silent = true })
+
+
+vim.api.nvim_create_user_command('CargoSplit', function(opts)
+	vim.cmd(':only | horiz term cargo ' .. opts.args)
+end, { nargs = '+' })
 
 -- :RipGrep 
 vim.api.nvim_create_user_command('RipGrep', function(opts)
@@ -130,6 +135,7 @@ require("mason-lspconfig").setup_handlers {
 -- which key
 local wk = require("which-key")
 local wk_mappings = {
+	c = { "<cmd>CargoSplit clippy<cr>", "CargoSplit check" },
 	r = { "<cmd>RipGrep <cword><cr>", "RipGrep <cword>" },
 	g = { "<cmd>GitGrep <cword><cr>", "GitGrep <cword>" },
 	d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
@@ -256,7 +262,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 local treesitter_config = {
-    ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown' },
+    ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
 
     auto_install = true,
 
@@ -326,7 +332,7 @@ telescope.setup({
     }
 })
 
-vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='crimson'})
+vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='white'})
 vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
 vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
 
