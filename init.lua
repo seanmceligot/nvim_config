@@ -2,21 +2,41 @@
 -- BEGIN ~/.config/nvim/init.lua
 --------------------------------------------------------------------------------
 
+-- Set <Space> as the global leader key. This must happen before plugins load.
 vim.g.mapleader = " "
+
+-- Use the system clipboard for all yank, delete, change, and put operations.
 vim.opt.clipboard = "unnamedplus"
+
+-- Set the GUI font (for Neovim in a GUI environment like Neovide or VimR).
 vim.o.guifont = "Hack_Nerd_Font:h10"
+
+-- Use the built-in "desert" colorscheme by default.
 vim.cmd("colorscheme desert")
 
 
--- c-X C-O completion
+--------------------------------------------------------------------------------
+-- BASIC KEYBINDINGS
+--------------------------------------------------------------------------------
+
+-- In Insert mode, <C-x><C-o> triggers Neovim's built-in "omnicompletion"
+-- (like a manual completion request). In Zed, you'd typically have 
+-- auto-suggestions, but here we can replicate a manual trigger.
 vim.keymap.set("i", "<C-x><C-o>", "<C-x><C-o>", { desc = "Open completion (omni)" })
 
--- Hide suggestions or do something else:
+-- In Insert mode, <C-x><C-z> will hide or dismiss current completion suggestions 
+-- by passing an empty completion list. This is akin to "escape completion" in Zed.
 vim.keymap.set("i", "<C-x><C-z>", function()
   vim.fn.complete(0, {})
 end, { desc = "Hide all suggestions" })
 
---------- BEGIN CycleColorScheme ------
+
+--------------------------------------------------------------------------------
+-- CycleColorScheme
+--
+-- Cycle through all installed color schemes by pressing ",c".
+--------------------------------------------------------------------------------
+
 local colorschemes = vim.fn.getcompletion('', 'color')
 local colorscheme_index = 1
 
@@ -28,11 +48,17 @@ function CycleColorScheme()
     vim.cmd('colorscheme ' .. colorschemes[colorscheme_index])
     print('Colorscheme: ' .. colorschemes[colorscheme_index])
 end
--- Map ,c
-vim.keymap.set('n', ',c', CycleColorScheme, { noremap = true, silent = true })
---------- END CycleColorScheme ------
 
---------- BEGIN ReplaceSmilies -------
+-- Press ",c" in Normal mode to cycle through color schemes
+vim.keymap.set('n', ',c', CycleColorScheme, { noremap = true, silent = true })
+
+
+--------------------------------------------------------------------------------
+-- ReplaceSmilies
+--
+-- Example command that replaces "[x]" with "[😎]" in the buffer.
+--------------------------------------------------------------------------------
+
 function ReplaceSmilies()
     -- Search and replace [x] with [😎] in the current buffer
     vim.api.nvim_command('%s/\\[x\\]/[😎]/g')
@@ -40,26 +66,50 @@ end
 
 -- Create a command :ReplaceSmilies to call the function
 vim.api.nvim_create_user_command('ReplaceSmilies', ReplaceSmilies, {})
---------- END ReplaceSmilies ------
+
+
+--------------------------------------------------------------------------------
+-- CargoSplit
+--
+-- Creates a horizontal terminal and runs a cargo command, e.g. :CargoSplit build
+--------------------------------------------------------------------------------
 
 vim.api.nvim_create_user_command('CargoSplit', function(opts)
 	vim.cmd(':only | horiz term cargo ' .. opts.args)
 end, { nargs = '+' })
 
--- :RipGrep 
+
+--------------------------------------------------------------------------------
+-- RipGrep
+--
+-- Sets the 'grepprg' to ripgrep with vimgrep-compatible output, then runs :grep.
+--------------------------------------------------------------------------------
+
 vim.api.nvim_create_user_command('RipGrep', function(opts)
     vim.cmd('set grepprg=rg\\ --vimgrep\\ -uu')
     vim.cmd('grep ' .. opts.args)
 end, { nargs = '+' })
 
--- :GitGrep
+
+--------------------------------------------------------------------------------
+-- GitGrep
+--
+-- Similar to :RipGrep but sets 'grepprg' to run git grep. Use :GitGrep <args>.
+--------------------------------------------------------------------------------
+
 vim.api.nvim_create_user_command('GitGrep', function(opts)
     vim.cmd('set grepprg=git\\ --no-pager\\ grep\\ --no-color\\ -n')
     vim.cmd('set grepformat=%f:%l:%m,%m\\ %f\\ match%ts,%f')
     vim.cmd('grep ' .. opts.args)
 end, { nargs = '+' })
 
--- lazy.nvim
+
+--------------------------------------------------------------------------------
+-- LAZY.NVIM BOOTSTRAP
+--
+-- Lazy is a plugin manager that we clone and place on the runtime path.
+--------------------------------------------------------------------------------
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
 	vim.fn.system({
@@ -73,20 +123,24 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- mason :Mason
+
+--------------------------------------------------------------------------------
+-- PLUGIN DECLARATIONS FOR LAZY
+--------------------------------------------------------------------------------
+
+-- Mason: for managing external LSP servers, formatters, etc. (:Mason)
 local mason_plugin      = {
 	"williamboman/mason.nvim",
 	'williamboman/mason-lspconfig.nvim'
 }
 
--- lsp  :LspInfo
--- neodev for editing .config/nvim/init.lua
+-- LSP + Neodev: native LSP configurations + special config for Neovim Lua dev.
 local lspconfig_plugin  = {
 	"neovim/nvim-lspconfig",
 	"folke/neodev.nvim",
 }
 
--- which key :WhichKey
+-- Which-key: interactive help for keybindings. (:WhichKey)
 local which_key_plugin  = {
 	"folke/which-key.nvim",
 	event = "VeryLazy",
@@ -97,12 +151,12 @@ local which_key_plugin  = {
 	opts = {}
 }
 
--- diffview :DiffViewOpen
+-- Diffview: git diffs in a side-by-side view. (:DiffViewOpen)
 local diffview_plugin   = {
 	'sindrets/diffview.nvim'
 }
 
--- TreeSitter :TSInstall
+-- TreeSitter: better syntax highlighting, text objects, incremental selection.
 local treesitter_plugin = {
 	'nvim-treesitter/nvim-treesitter',
 	dependencies = {
@@ -110,7 +164,7 @@ local treesitter_plugin = {
 	},
 }
 
--- rainbow csv
+-- Rainbow CSV: highlight CSV/TSV files by columns.
 local rainbow_csv_plugin = {
     'cameron-wags/rainbow_csv.nvim',
     config = true,
@@ -131,7 +185,7 @@ local rainbow_csv_plugin = {
     }
 }
 
--- telescope
+-- Telescope: fuzzy finder for files, buffers, LSP symbols, and more.
 local telescope_plugin = {
     'nvim-telescope/telescope.nvim',
     dependencies = {
@@ -141,7 +195,7 @@ local telescope_plugin = {
     }
 }
 
--- lazy
+-- Gather all plugin tables and set them up with lazy
 local plugins = {
   mason_plugin,
   which_key_plugin,
@@ -153,10 +207,16 @@ local plugins = {
 }
 require("lazy").setup(plugins)
 
--- mason and lsp
+
+--------------------------------------------------------------------------------
+-- MASON & LSP SETUP
+--------------------------------------------------------------------------------
+
+-- Neodev must be set up before LSP config to properly handle .lua files.
 require("neodev").setup()
 require("mason").setup()
 require("mason-lspconfig").setup()
+
 local lspconfig = require('lspconfig')
 
 -- :h mason-lspconfig-automatic-server-setup
@@ -166,32 +226,39 @@ require("mason-lspconfig").setup_handlers {
 	end,
 }
 
+
 --------------------------------------------------------------------------------
 -- WHICH-KEY CONFIGURATION
 --
--- Zed-like keybinds where possible.
+-- We use "which-key" to provide a helpful popup of available keybinds.
+-- Zed-like keybinds are grouped under "g" (for LSP commands).
 --------------------------------------------------------------------------------
+
 local wk = require("which-key")
 
+-- Mappings prefixed by <leader>
 local wk_mappings = {
-    -- Existing top-level keys:
+    -- Press <leader> + c to run cargo clippy via :CargoSplit
 	c = { "<cmd>CargoSplit clippy<cr>", "CargoSplit check" },
+	-- Press <leader> + r to run ripgrep on the word under cursor
 	r = { "<cmd>RipGrep <cword><cr>", "RipGrep <cword>" },
+	-- Press <leader> + g to run git grep on the word under cursor
 	g = { "<cmd>GitGrep <cword><cr>", "GitGrep <cword>" },
+	-- Press <leader> + d to open DiffView
 	d = { "<cmd>DiffviewOpen<cr>", "DiffView" },
+	-- Press <leader> + w to open WhichKey help
 	w = { "<cmd>WhichKey<cr>", "WhichKey" },
+	-- Press <leader> + m to open Mason UI
 	m = { "<cmd>Mason<cr>", "Mason" },
+	-- Press <leader> + t then i to trigger incremental selection
 	t = {
 		name = "Treesitter",
 		i = "incremental selection",
 	},
-
-    -- Add a new top-level table for 'g' so it behaves like Zed’s LSP keys
-    -- (in which-key, having `g = {...}` under `prefix = "<leader>"` won't give us plain `gX`.
-    -- Instead, we can do *global* mappings or register them as you prefer. 
-    -- If you want plain `g d`, `g D`, etc. to appear in WhichKey, use a separate `wk.register` with `prefix = "g"`.
 }
 
+-- Zed-like LSP keybinds under 'g' prefix in normal mode
+-- (like `g d` for definition, `g h` for hover, etc.).
 local zed_lsp_mappings = {
     name = "LSP (Zed-style)",
     d = { "<cmd>lua vim.lsp.buf.definition()<cr>",         "Go to definition" },
@@ -213,15 +280,19 @@ wk.register(wk_mappings, { prefix = "<leader>" })
 -- Register the "g" prefix for LSP
 wk.register(zed_lsp_mappings, { prefix = "g" })
 
--- Also register some global mappings
+-- Also register some global mappings (no prefix)
 wk.register({
+    -- Press Ctrl-p to open file finder
     ["<C-p>"] = { "<cmd>Telescope find_files<cr>", "Find Files" },
+    -- Press Ctrl-n to open a new empty file (like "New file" in Zed)
     ["<C-n>"] = { "<cmd>enew<cr>", "New File" },
+    -- Press Ctrl-s to save the current file (like "Save" in Zed)
     ["<C-s>"] = { "<cmd>w<cr>", "Save File" },
+    -- Press Ctrl-x to quit (like "Close file" in Zed)
     ["<C-x>"] = { "<cmd>q<cr>", "Quit" },
 }, { prefix = "" })
 
--- Optional: Show global mappings
+-- Optional: Show the global mappings with <leader><leader>
 wk.register({
     ["<leader><leader>"] = {
         function()
@@ -231,12 +302,13 @@ wk.register({
     },
 })
 
+
 --------------------------------------------------------------------------------
 -- TREESITTER CONFIG
 --------------------------------------------------------------------------------
+
 local treesitter_config = {
   ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
-
   auto_install = true,
 
   highlight = { enable = true },
@@ -245,9 +317,13 @@ local treesitter_config = {
   incremental_selection = {
     enable = true,
     keymaps = {
+      -- Start incremental selection: <leader> + t + i
       init_selection = '<leader>ti',
+      -- Expand the selection by pressing <Enter>
       node_incremental = '<Enter>',
+      -- Expand selection to the scope by pressing Ctrl-s
       scope_incremental = '<c-s>',
+      -- Shrink selection by pressing Backspace
       node_decremental = '<BS>',
     },
   },
@@ -257,7 +333,7 @@ local treesitter_config = {
       enable = true,
       lookahead = true,
       keymaps = {
-        -- Original mappings
+        -- "aa" => outer parameter, "ia" => inner parameter, etc.
         ['aa'] = '@parameter.outer',
         ['ia'] = '@parameter.inner',
         ['af'] = '@function.outer',
@@ -265,21 +341,17 @@ local treesitter_config = {
         ['ac'] = '@class.outer',
         ['ic'] = '@class.inner',
 
-        -- Zed-like additions
-        ['gc'] = '@comment.outer', -- For text object “a comment” (g c in Zed)
-        -- Tag text objects (if your grammar supports HTML-like tags):
+        -- Zed-like approach: "gc" => outer comment text object
+        ['gc'] = '@comment.outer',
+
+        -- HTML-like tags if available
         ['at'] = '@tag.outer',
         ['it'] = '@tag.inner',
-        --
-        -- The “indent-level” text objects (aI, iI, etc.) are not standard in
-        -- nvim-treesitter-textobjects. You’d need a custom query or plugin
-        -- if you want to replicate Zed’s aI, iI, ii exactly.
       },
     },
     move = {
       enable = true,
-      set_jumps = true,
-      -- Original movement
+      set_jumps = true, -- Use jumplist on normal movements
       goto_next_start = {
         [']m'] = '@function.outer',
         [']]'] = '@class.outer',
@@ -296,19 +368,15 @@ local treesitter_config = {
         ['[M'] = '@function.outer',
         ['[]'] = '@class.outer',
       },
-      --
-      -- NOTE: Zed’s “go to next/previous comment” ( `] /`, `] *`, `[ /`, `[ *` )
-      -- is not built-in. You’d need a custom capture or plugin that handles
-      -- comment motion. We’re not removing anything though, just noting it’s
-      -- not standard in nvim-treesitter-textobjects.
     },
     swap = {
-      -- Keep your original swap mappings
       enable = true,
       swap_next = {
+        -- Move to next parameter
         ['<leader>a'] = '@parameter.inner',
       },
       swap_previous = {
+        -- Move to previous parameter
         ['<leader>A'] = '@parameter.inner',
       },
     },
@@ -318,24 +386,31 @@ local treesitter_config = {
 -- Finally, set up Treesitter with the combined config
 require('nvim-treesitter.configs').setup(treesitter_config)
 
+
 --------------------------------------------------------------------------------
 -- TELESCOPE SETUP
 --------------------------------------------------------------------------------
+
 local telescope = require('telescope')
 telescope.setup({
     defaults = {
-        -- your Telescope configuration here
+        -- You can configure prompt behavior, sorting, etc. here.
     }
 })
 
+-- Example custom highlight groups for LSP
 vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='white'})
 vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
 vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
 
+
 --------------------------------------------------------------------------------
--- ACTUAL LSP KEYBINDINGS (BUFFER-LOCAL)
--- We override them to match Zed shortcuts exactly.
+-- LSP KEYBINDINGS (BUFFER-LOCAL)
+--
+-- Use an Autocmd so these are set only when an LSP actually attaches.
+-- They mirror the "gX" style from Zed, but are specifically buffer-local.
 --------------------------------------------------------------------------------
+
 vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
 	callback = function(ev)
@@ -343,44 +418,34 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 		local opts = { buffer = ev.buf }
 
-		-- Zed-style bindings:
+		-- Zed-style LSP navigation:
+		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)        -- g d: Go to definition
+		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)       -- g D: Go to declaration
+		vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)   -- g y: Go to type definition
+		vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, opts)    -- g I: Go to implementation
 
-		-- Go to definition: g d
-		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-
-		-- Go to declaration: g D
-		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-
-		-- Go to type definition: g y
-		vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
-
-		-- Go to implementation: g I
-		vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, opts)
-
-		-- Rename (change definition): c d
+		-- Zed-like rename: "c d" => "change definition"
 		vim.keymap.set('n', 'cd', vim.lsp.buf.rename, opts)
 
-		-- Go to all references: g A
+		-- g A: Show all references
 		vim.keymap.set('n', 'gA', vim.lsp.buf.references, opts)
 
-		-- Find symbol in current file: g s
-		--   -> For best results, use Telescope's lsp_document_symbols
+		-- g s: Find symbol in current file (uses Telescope)
 		vim.keymap.set('n', 'gs', "<cmd>Telescope lsp_document_symbols<cr>", opts)
 
-		-- Find symbol in entire project: g S
+		-- g S: Find symbol in entire workspace (uses Telescope)
 		vim.keymap.set('n', 'gS', "<cmd>Telescope lsp_dynamic_workspace_symbols<cr>", opts)
 
-		-- Go to next diagnostic: g ] (and/or ]d)
+		-- g ]: Jump to next diagnostic (or ]d)
 		vim.keymap.set('n', 'g]', vim.diagnostic.goto_next, opts)
-		-- Go to previous diagnostic: g [ (and/or [d)
+		-- g [: Jump to previous diagnostic (or [d)
 		vim.keymap.set('n', 'g[', vim.diagnostic.goto_prev, opts)
 
-		-- Show inline error (hover): g h
+		-- g h: Hover info (like inline error or doc in Zed)
 		vim.keymap.set('n', 'gh', vim.lsp.buf.hover, opts)
 
-		-- Open the code actions menu: g .
+		-- g .: Show code actions
 		vim.keymap.set('n', 'g.', vim.lsp.buf.code_action, opts)
-
 	end,
 })
 
