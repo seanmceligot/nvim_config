@@ -1,8 +1,10 @@
--- BEGIN ~/.config/nvim/init.lua --
+--------------------------------------------------------------------------------
+-- BEGIN ~/.config/nvim/init.lua
+--------------------------------------------------------------------------------
 
 vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
-vim.o.guifont = "Hack_Nerd_Font:h10" -- text below applies for VimScript
+vim.o.guifont = "Hack_Nerd_Font:h10"
 vim.cmd("colorscheme desert")
 
 --------- BEGIN CycleColorScheme ------
@@ -20,6 +22,7 @@ end
 -- Map ,c
 vim.keymap.set('n', ',c', CycleColorScheme, { noremap = true, silent = true })
 --------- END CycleColorScheme ------
+
 --------- BEGIN ReplaceSmilies -------
 function ReplaceSmilies()
     -- Search and replace [x] with [😎] in the current buffer
@@ -28,25 +31,20 @@ end
 
 -- Create a command :ReplaceSmilies to call the function
 vim.api.nvim_create_user_command('ReplaceSmilies', ReplaceSmilies, {})
-
----
-
 --------- END ReplaceSmilies ------
----
+
 vim.api.nvim_create_user_command('CargoSplit', function(opts)
 	vim.cmd(':only | horiz term cargo ' .. opts.args)
 end, { nargs = '+' })
 
 -- :RipGrep 
 vim.api.nvim_create_user_command('RipGrep', function(opts)
-    -- Temporarily change grepprg to ripgrep for this command
     vim.cmd('set grepprg=rg\\ --vimgrep\\ -uu')
     vim.cmd('grep ' .. opts.args)
 end, { nargs = '+' })
 
 -- :GitGrep
 vim.api.nvim_create_user_command('GitGrep', function(opts)
-    -- Temporarily change grepprg to ripgrep for this command
     vim.cmd('set grepprg=git\\ --no-pager\\ grep\\ --no-color\\ -n')
     vim.cmd('set grepformat=%f:%l:%m,%m\\ %f\\ match%ts,%f')
     vim.cmd('grep ' .. opts.args)
@@ -66,7 +64,6 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-
 -- mason :Mason
 local mason_plugin      = {
 	"williamboman/mason.nvim",
@@ -79,7 +76,6 @@ local lspconfig_plugin  = {
 	"neovim/nvim-lspconfig",
 	"folke/neodev.nvim",
 }
-
 
 -- which key :WhichKey
 local which_key_plugin  = {
@@ -137,9 +133,16 @@ local telescope_plugin = {
 }
 
 -- lazy
-local plugins = { mason_plugin, which_key_plugin, diffview_plugin, treesitter_plugin, lspconfig_plugin, rainbow_csv_plugin, telescope_plugin }
+local plugins = {
+  mason_plugin,
+  which_key_plugin,
+  diffview_plugin,
+  treesitter_plugin,
+  lspconfig_plugin,
+  rainbow_csv_plugin,
+  telescope_plugin
+}
 require("lazy").setup(plugins)
-
 
 -- mason and lsp
 require("neodev").setup()
@@ -149,14 +152,20 @@ local lspconfig = require('lspconfig')
 
 -- :h mason-lspconfig-automatic-server-setup
 require("mason-lspconfig").setup_handlers {
-	function(server_name) -- default handler (optional)
+	function(server_name) -- default handler
 		lspconfig[server_name].setup {}
 	end,
 }
 
--- which key configuration
+--------------------------------------------------------------------------------
+-- WHICH-KEY CONFIGURATION
+--
+-- We remove the old `l = {...}` LSP block and replace it with Zed-like keybinds.
+--------------------------------------------------------------------------------
 local wk = require("which-key")
+
 local wk_mappings = {
+    -- Existing top-level keys:
 	c = { "<cmd>CargoSplit clippy<cr>", "CargoSplit check" },
 	r = { "<cmd>RipGrep <cword><cr>", "RipGrep <cword>" },
 	g = { "<cmd>GitGrep <cword><cr>", "GitGrep <cword>" },
@@ -167,54 +176,69 @@ local wk_mappings = {
 		name = "Treesitter",
 		i = "incremental selection",
 	},
-	l = {
-		name = "LSP",
-		K = { "<cmd>lua vim.lsp.buf.hover()<cr>", "Show Documentation (hover)" },
-		r = { "<cmd>lua vim.lsp.buf.references()<cr>", "Find References" },
-		d = { "<cmd>lua vim.lsp.buf.definition()<cr>", "Go to Definition" },
-		i = { "<cmd>lua vim.lsp.buf.implementation()<cr>", "Go to Implementation" },
-		R = { "<cmd>lua vim.lsp.buf.rename()<cr>", "Rename Symbol" },
-		a = { "<cmd>lua vim.lsp.buf.code_action()<cr>", "Code Action" },
-		f = { "<cmd>lua vim.lsp.buf.format({ async = true })<cr>", "Format Code" },
-		e = { "<cmd>lua vim.diagnostic.open_float()<cr>", "Show Diagnostics" },
-		n = { "<cmd>lua vim.diagnostic.goto_next()<cr>", "Next Diagnostic" },
-		p = { "<cmd>lua vim.diagnostic.goto_prev()<cr>", "Previous Diagnostic" },
-		t = { "<cmd>lua vim.lsp.buf.type_definition()<cr>", "Type Definition" },
-	},
-    f = {
-        name = "Telescope",
-        f = { "<cmd>Telescope find_files<cr>", "Find Files" },
-        g = { "<cmd>Telescope live_grep<cr>", "Live Grep" },
-        b = { "<cmd>Telescope buffers<cr>", "Buffers" },
-        h = { "<cmd>Telescope help_tags<cr>", "Help Tags" },
-    },
+
+    -- Add a new top-level table for 'g' so it behaves like Zed’s LSP keys
+    -- (in which-key, having `g = {...}` under `prefix = "<leader>"` won't give us plain `gX`.
+    -- Instead, we can do *global* mappings or register them as you prefer. 
+    -- If you want plain `g d`, `g D`, etc. to appear in WhichKey, use a separate `wk.register` with `prefix = "g"`.
 }
+
+local zed_lsp_mappings = {
+    name = "LSP (Zed-style)",
+    d = { "<cmd>lua vim.lsp.buf.definition()<cr>",         "Go to definition" },
+    D = { "<cmd>lua vim.lsp.buf.declaration()<cr>",        "Go to declaration" },
+    y = { "<cmd>lua vim.lsp.buf.type_definition()<cr>",    "Go to type definition" },
+    I = { "<cmd>lua vim.lsp.buf.implementation()<cr>",     "Go to implementation" },
+    A = { "<cmd>lua vim.lsp.buf.references()<cr>",         "All references" },
+    s = { "<cmd>Telescope lsp_document_symbols<cr>",       "Symbol in current file" },
+    S = { "<cmd>Telescope lsp_dynamic_workspace_symbols<cr>", "Symbol in entire project" },
+    ["]"] = { "<cmd>lua vim.diagnostic.goto_next()<cr>",   "Next diagnostic" },
+    ["["] = { "<cmd>lua vim.diagnostic.goto_prev()<cr>",   "Previous diagnostic" },
+    h = { "<cmd>lua vim.lsp.buf.hover()<cr>",              "Show inline error (hover)" },
+    ["."] = { "<cmd>lua vim.lsp.buf.code_action()<cr>",    "Code actions" },
+}
+
+-- If you truly want `c d` for rename, we can’t do that under "g".
+-- We must make a separate table for prefix = "c".  
+-- However, beware this overrides the built-in `c` (change operator).
+-- If you are sure, do:
+local zed_rename_mappings = {
+    d = { "<cmd>lua vim.lsp.buf.rename()<cr>", "Rename symbol" },
+}
+
+-- Register <leader>-prefixed mappings
 wk.register(wk_mappings, { prefix = "<leader>" })
--- Register global mappings
+
+-- Register the "g" prefix for LSP
+wk.register(zed_lsp_mappings, { prefix = "g" })
+
+-- Register "c" prefix just for rename
+wk.register(zed_rename_mappings, { prefix = "c" })
+
+-- Also register some global mappings
 wk.register({
-    -- Your global mappings here, for example:
     ["<C-p>"] = { "<cmd>Telescope find_files<cr>", "Find Files" },
     ["<C-n>"] = { "<cmd>enew<cr>", "New File" },
     ["<C-s>"] = { "<cmd>w<cr>", "Save File" },
     ["<C-x>"] = { "<cmd>q<cr>", "Quit" },
-}, { prefix = "" })  -- Empty prefix for global mappings
+}, { prefix = "" })
 
--- Optional: Create a shortcut to show global mappings with <leader><leader>
+-- Optional: Show global mappings
 wk.register({
     ["<leader><leader>"] = {
         function()
-            wk.show("", { mode = "n" })  -- Show all global mappings in normal mode
+            wk.show("", { mode = "n" })
         end,
         "Show Global Mappings",
     },
 })
 
--- Treesitter configuration
+--------------------------------------------------------------------------------
+-- TREESITTER CONFIG
+--------------------------------------------------------------------------------
 local treesitter_config = {
     ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
-
     auto_install = true,
-
     highlight = { enable = true },
     indent = { enable = true },
     incremental_selection = {
@@ -268,15 +292,17 @@ local treesitter_config = {
           ['<leader>A'] = '@parameter.inner',
         },
       },
-    }}
- require('nvim-treesitter.configs').setup(treesitter_config)
+    }
+}
+require('nvim-treesitter.configs').setup(treesitter_config)
 
-
--- Telescope setup
+--------------------------------------------------------------------------------
+-- TELESCOPE SETUP
+--------------------------------------------------------------------------------
 local telescope = require('telescope')
 telescope.setup({
     defaults = {
-        -- ... (your Telescope configuration options here)
+        -- your Telescope configuration here
     }
 })
 
@@ -284,58 +310,63 @@ vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='white'})
 vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
 vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
 
-
--- LSP keybindings
+--------------------------------------------------------------------------------
+-- ACTUAL LSP KEYBINDINGS (BUFFER-LOCAL)
+-- We override them to match Zed shortcuts exactly.
+--------------------------------------------------------------------------------
 vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
 	callback = function(ev)
-		-- :help omnnifunc defaults to: crtl-x ctrl o
+		-- Use omnifunc for completion
 		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-
-		-- Buffer local mappings
 		local opts = { buffer = ev.buf }
 
-		-- Go to references (gr)
-		vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+		-- Zed-style bindings:
 
-		-- Go to declaration (gD)
-		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-
-		-- Go to definition (gd)
+		-- Go to definition: g d
 		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
 
-		-- Go to implementation (gi)
-		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+		-- Go to declaration: g D
+		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
 
-		-- Hover documentation (K)
-		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+		-- Go to type definition: g y
+		vim.keymap.set('n', 'gy', vim.lsp.buf.type_definition, opts)
 
-		-- Rename symbol (<leader>rn)
-		vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+		-- Go to implementation: g I
+		vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, opts)
 
-		-- Code actions (<leader>ca)
-		vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
+		-- Rename (change definition): c d
+		vim.keymap.set('n', 'cd', vim.lsp.buf.rename, opts)
 
-		-- Format code (<leader>cf)
-		vim.keymap.set('n', '<leader>cf', function()
-			vim.lsp.buf.format { async = true }
-		end, opts)
+		-- Go to all references: g A
+		vim.keymap.set('n', 'gA', vim.lsp.buf.references, opts)
 
-		-- Diagnostics
+		-- Find symbol in current file: g s
+		--   -> For best results, use Telescope's lsp_document_symbols
+		vim.keymap.set('n', 'gs', "<cmd>Telescope lsp_document_symbols<cr>", opts)
 
-		-- Show diagnostics in floating window (<leader>e)
-		vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
+		-- Find symbol in entire project: g S
+		vim.keymap.set('n', 'gS', "<cmd>Telescope lsp_dynamic_workspace_symbols<cr>", opts)
 
-		-- Go to next diagnostic (]d)
-		vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
+		-- Go to next diagnostic: g ] (and/or ]d)
+		vim.keymap.set('n', 'g]', vim.diagnostic.goto_next, opts)
+		-- Go to previous diagnostic: g [ (and/or [d)
+		vim.keymap.set('n', 'g[', vim.diagnostic.goto_prev, opts)
 
-		-- Go to previous diagnostic ([d)
-		vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+		-- Show inline error (hover): g h
+		vim.keymap.set('n', 'gh', vim.lsp.buf.hover, opts)
 
-		-- Set location list to show diagnostics (<leader>q)
-		vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, opts)
+		-- Open the code actions menu: g .
+		vim.keymap.set('n', 'g.', vim.lsp.buf.code_action, opts)
+
+		-- Optional: If you prefer to keep ]d, [d, or K for older muscle memory:
+		-- vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
+		-- vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+		-- vim.keymap.set('n', 'K',  vim.lsp.buf.hover, opts)
 	end,
 })
 
--- END ~/.config/nvim/init.lua --
+--------------------------------------------------------------------------------
+-- END ~/.config/nvim/init.lua
+--------------------------------------------------------------------------------
 
