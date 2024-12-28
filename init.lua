@@ -7,6 +7,15 @@ vim.opt.clipboard = "unnamedplus"
 vim.o.guifont = "Hack_Nerd_Font:h10"
 vim.cmd("colorscheme desert")
 
+
+-- c-X C-O completion
+vim.keymap.set("i", "<C-x><C-o>", "<C-x><C-o>", { desc = "Open completion (omni)" })
+
+-- Hide suggestions or do something else:
+vim.keymap.set("i", "<C-x><C-z>", function()
+  vim.fn.complete(0, {})
+end, { desc = "Hide all suggestions" })
+
 --------- BEGIN CycleColorScheme ------
 local colorschemes = vim.fn.getcompletion('', 'color')
 local colorscheme_index = 1
@@ -160,7 +169,7 @@ require("mason-lspconfig").setup_handlers {
 --------------------------------------------------------------------------------
 -- WHICH-KEY CONFIGURATION
 --
--- We remove the old `l = {...}` LSP block and replace it with Zed-like keybinds.
+-- Zed-like keybinds where possible.
 --------------------------------------------------------------------------------
 local wk = require("which-key")
 
@@ -198,22 +207,11 @@ local zed_lsp_mappings = {
     ["."] = { "<cmd>lua vim.lsp.buf.code_action()<cr>",    "Code actions" },
 }
 
--- If you truly want `c d` for rename, we can’t do that under "g".
--- We must make a separate table for prefix = "c".  
--- However, beware this overrides the built-in `c` (change operator).
--- If you are sure, do:
-local zed_rename_mappings = {
-    d = { "<cmd>lua vim.lsp.buf.rename()<cr>", "Rename symbol" },
-}
-
 -- Register <leader>-prefixed mappings
 wk.register(wk_mappings, { prefix = "<leader>" })
 
 -- Register the "g" prefix for LSP
 wk.register(zed_lsp_mappings, { prefix = "g" })
-
--- Register "c" prefix just for rename
-wk.register(zed_rename_mappings, { prefix = "c" })
 
 -- Also register some global mappings
 wk.register({
@@ -237,63 +235,87 @@ wk.register({
 -- TREESITTER CONFIG
 --------------------------------------------------------------------------------
 local treesitter_config = {
-    ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
-    auto_install = true,
-    highlight = { enable = true },
-    indent = { enable = true },
-    incremental_selection = {
+  ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
+
+  auto_install = true,
+
+  highlight = { enable = true },
+  indent = { enable = true },
+
+  incremental_selection = {
+    enable = true,
+    keymaps = {
+      init_selection = '<leader>ti',
+      node_incremental = '<Enter>',
+      scope_incremental = '<c-s>',
+      node_decremental = '<BS>',
+    },
+  },
+
+  textobjects = {
+    select = {
       enable = true,
+      lookahead = true,
       keymaps = {
-        init_selection = '<leader>ti',
-        node_incremental = '<Enter>',
-        scope_incremental = '<c-s>',
-        node_decremental = '<BS>',
+        -- Original mappings
+        ['aa'] = '@parameter.outer',
+        ['ia'] = '@parameter.inner',
+        ['af'] = '@function.outer',
+        ['if'] = '@function.inner',
+        ['ac'] = '@class.outer',
+        ['ic'] = '@class.inner',
+
+        -- Zed-like additions
+        ['gc'] = '@comment.outer', -- For text object “a comment” (g c in Zed)
+        -- Tag text objects (if your grammar supports HTML-like tags):
+        ['at'] = '@tag.outer',
+        ['it'] = '@tag.inner',
+        --
+        -- The “indent-level” text objects (aI, iI, etc.) are not standard in
+        -- nvim-treesitter-textobjects. You’d need a custom query or plugin
+        -- if you want to replicate Zed’s aI, iI, ii exactly.
       },
     },
-    textobjects = {
-      select = {
-        enable = true,
-        lookahead = true,
-        keymaps = {
-          ['aa'] = '@parameter.outer',
-          ['ia'] = '@parameter.inner',
-          ['af'] = '@function.outer',
-          ['if'] = '@function.inner',
-          ['ac'] = '@class.outer',
-          ['ic'] = '@class.inner',
-        },
+    move = {
+      enable = true,
+      set_jumps = true,
+      -- Original movement
+      goto_next_start = {
+        [']m'] = '@function.outer',
+        [']]'] = '@class.outer',
       },
-      move = {
-        enable = true,
-        set_jumps = true,
-        goto_next_start = {
-          [']m'] = '@function.outer',
-          [']]'] = '@class.outer',
-        },
-        goto_next_end = {
-          [']M'] = '@function.outer',
-          [']['] = '@class.outer',
-        },
-        goto_previous_start = {
-          ['[m'] = '@function.outer',
-          ['[['] = '@class.outer',
-        },
-        goto_previous_end = {
-          ['[M'] = '@function.outer',
-          ['[]'] = '@class.outer',
-        },
+      goto_next_end = {
+        [']M'] = '@function.outer',
+        [']['] = '@class.outer',
       },
-      swap = {
-        enable = true,
-        swap_next =  {
-          ['<leader>a'] = '@parameter.inner',
-        },
-        swap_previous = {
-          ['<leader>A'] = '@parameter.inner',
-        },
+      goto_previous_start = {
+        ['[m'] = '@function.outer',
+        ['[['] = '@class.outer',
       },
-    }
+      goto_previous_end = {
+        ['[M'] = '@function.outer',
+        ['[]'] = '@class.outer',
+      },
+      --
+      -- NOTE: Zed’s “go to next/previous comment” ( `] /`, `] *`, `[ /`, `[ *` )
+      -- is not built-in. You’d need a custom capture or plugin that handles
+      -- comment motion. We’re not removing anything though, just noting it’s
+      -- not standard in nvim-treesitter-textobjects.
+    },
+    swap = {
+      -- Keep your original swap mappings
+      enable = true,
+      swap_next = {
+        ['<leader>a'] = '@parameter.inner',
+      },
+      swap_previous = {
+        ['<leader>A'] = '@parameter.inner',
+      },
+    },
+  },
 }
+
+-- Finally, set up Treesitter with the combined config
 require('nvim-treesitter.configs').setup(treesitter_config)
 
 --------------------------------------------------------------------------------
@@ -359,10 +381,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		-- Open the code actions menu: g .
 		vim.keymap.set('n', 'g.', vim.lsp.buf.code_action, opts)
 
-		-- Optional: If you prefer to keep ]d, [d, or K for older muscle memory:
-		-- vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
-		-- vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
-		-- vim.keymap.set('n', 'K',  vim.lsp.buf.hover, opts)
 	end,
 })
 
