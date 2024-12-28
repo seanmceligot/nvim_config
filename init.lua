@@ -1,16 +1,38 @@
+-- BEGIN ~/.config/nvim/init.lua --
+
 vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
 vim.o.guifont = "Hack_Nerd_Font:h10" -- text below applies for VimScript
-vim.cmd("colorscheme retrobox")
---vim.cmd("colorscheme quiet")
---vim.cmd("colorscheme habamax")
+vim.cmd("colorscheme desert")
 
--- supposed to exit terminal input mode with leader ESC
---vim.api.nvim_set_keymap('t','<Leader><ESC>', '<C-\\><C-n>',{noremap = true})
+--------- BEGIN CycleColorScheme ------
+local colorschemes = vim.fn.getcompletion('', 'color')
+local colorscheme_index = 1
 
---vim.api.nvim_set_keymap('n', ',c', ':only | horiz term cargo clippy<CR>', { noremap = true, silent = true })
+function CycleColorScheme()
+    colorscheme_index = colorscheme_index + 1
+    if colorscheme_index > #colorschemes then
+        colorscheme_index = 1
+    end
+    vim.cmd('colorscheme ' .. colorschemes[colorscheme_index])
+    print('Colorscheme: ' .. colorschemes[colorscheme_index])
+end
+-- Map ,c
+vim.keymap.set('n', ',c', CycleColorScheme, { noremap = true, silent = true })
+--------- END CycleColorScheme ------
+--------- BEGIN ReplaceSmilies -------
+function ReplaceSmilies()
+    -- Search and replace [x] with [😎] in the current buffer
+    vim.api.nvim_command('%s/\\[x\\]/[😎]/g')
+end
 
+-- Create a command :ReplaceSmilies to call the function
+vim.api.nvim_create_user_command('ReplaceSmilies', ReplaceSmilies, {})
 
+---
+
+--------- END ReplaceSmilies ------
+---
 vim.api.nvim_create_user_command('CargoSplit', function(opts)
 	vim.cmd(':only | horiz term cargo ' .. opts.args)
 end, { nargs = '+' })
@@ -132,7 +154,7 @@ require("mason-lspconfig").setup_handlers {
 	end,
 }
 
--- which key
+-- which key configuration
 local wk = require("which-key")
 local wk_mappings = {
 	c = { "<cmd>CargoSplit clippy<cr>", "CargoSplit check" },
@@ -147,29 +169,17 @@ local wk_mappings = {
 	},
 	l = {
 		name = "LSP",
-		a = "action",
-		K = "hover",
-		F = "format entire file",
-		R = "rename",
-		r = "references",
-		e = "diagnostics",
-		D = "Declaration",
-		d = "Definition",
-		i = "implementation",
-		p = "Previous diagnostics",
-		n = "Next diagnostics",
-		l = "List",
-		h = "Hover",
-		t = "Type",
-		v = {
-			name = "View",
-		},
-		w = {
-			name = "Folder",
-			l = "list", -- lwl
-			a = "add", -- lwa
-			r = "remove" -- lwr
-		},
+		K = { "<cmd>lua vim.lsp.buf.hover()<cr>", "Show Documentation (hover)" },
+		r = { "<cmd>lua vim.lsp.buf.references()<cr>", "Find References" },
+		d = { "<cmd>lua vim.lsp.buf.definition()<cr>", "Go to Definition" },
+		i = { "<cmd>lua vim.lsp.buf.implementation()<cr>", "Go to Implementation" },
+		R = { "<cmd>lua vim.lsp.buf.rename()<cr>", "Rename Symbol" },
+		a = { "<cmd>lua vim.lsp.buf.code_action()<cr>", "Code Action" },
+		f = { "<cmd>lua vim.lsp.buf.format({ async = true })<cr>", "Format Code" },
+		e = { "<cmd>lua vim.diagnostic.open_float()<cr>", "Show Diagnostics" },
+		n = { "<cmd>lua vim.diagnostic.goto_next()<cr>", "Next Diagnostic" },
+		p = { "<cmd>lua vim.diagnostic.goto_prev()<cr>", "Previous Diagnostic" },
+		t = { "<cmd>lua vim.lsp.buf.type_definition()<cr>", "Type Definition" },
 	},
     f = {
         name = "Telescope",
@@ -180,87 +190,26 @@ local wk_mappings = {
     },
 }
 wk.register(wk_mappings, { prefix = "<leader>" })
+-- Register global mappings
+wk.register({
+    -- Your global mappings here, for example:
+    ["<C-p>"] = { "<cmd>Telescope find_files<cr>", "Find Files" },
+    ["<C-n>"] = { "<cmd>enew<cr>", "New File" },
+    ["<C-s>"] = { "<cmd>w<cr>", "Save File" },
+    ["<C-x>"] = { "<cmd>q<cr>", "Quit" },
+}, { prefix = "" })  -- Empty prefix for global mappings
 
--- View (lv)
---
--- Space lvd: Open diagnostics
---
-vim.keymap.set('n', '<leader>lD', vim.lsp.buf.declaration, opts)
-vim.keymap.set('n', '<leader>ld', vim.lsp.buf.definition, opts)
-vim.keymap.set('n', '<leader>le', vim.diagnostic.open_float)
-
--- Space lvp: Previous diagnostic error
-vim.keymap.set('n', '<leader>lp', vim.diagnostic.goto_prev)
-
--- Space lvn: Next diagnostic error
-vim.keymap.set('n', '<leader>ln', vim.diagnostic.goto_next)
-
--- Space lvl: Diagnostics location list
-vim.keymap.set('n', '<leader>ll', vim.diagnostic.setloclist)
-
-vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-	callback = function(ev)
-		-- :help omnnifunc defaults to: crtl-x ctrl o
-		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-
-		-- Buffer local mappings
-		local opts = { buffer = ev.buf }
-
-		-- Go (Space lg)
-		--
-		-- Space lgr: Find references
-		vim.keymap.set('n', '<leader>lr', vim.lsp.buf.references, opts)
-
-		-- Space lgd: Jump to declaration int i
-		vim.keymap.set('n', '<leader>lD', vim.lsp.buf.declaration, opts)
-
-		-- Space lga: Jump to definition (assignement) var=val
-		vim.keymap.set('n', '<leader>ld', vim.lsp.buf.definition, opts)
-
-		-- Space lgi: Jump to implementation (gi)
-		vim.keymap.set('n', '<leader>li', vim.lsp.buf.implementation, opts)
-
-
-		-- View (Space lv)
-		--
-		-- Space lvh: Hover information
-		vim.keymap.set('n', '<leader>lvh', vim.lsp.buf.hover, opts)
-		-- alternate shift -k for hover
-		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-		vim.keymap.set('n', '<leader>lK', vim.lsp.buf.hover, opts)
-
-		-- Space lvs: Signature help
-		vim.keymap.set('n', '<leader>lt', vim.lsp.buf.signature_help, opts)
-
-		-- Space lvt: Type definition
-		vim.keymap.set('n', '<leader>lvt', vim.lsp.buf.type_definition, opts)
-
-		-- Workspace (Space lw)
-		--
-		-- Add workspace folder
-		vim.keymap.set('n', '<leader>lwa', vim.lsp.buf.add_workspace_folder, opts)
-
-		-- Remove workspace folder
-		vim.keymap.set('n', '<leader>lwr', vim.lsp.buf.remove_workspace_folder, opts)
-
-		-- List workspace folders
-		vim.keymap.set('n', '<leader>lwl', function()
-			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-		end, opts)
-
-		-- Edit (Space le)
-		vim.keymap.set('n', '<leader>lR', vim.lsp.buf.rename, opts)
-
-		vim.keymap.set({ 'n', 'v' }, '<leader>la', vim.lsp.buf.code_action, opts)
-
-		-- Space lef: Edit Format buffer
-		vim.keymap.set('n', '<leader>lF', function()
-			vim.lsp.buf.format { async = true }
-		end, opts)
-	end,
+-- Optional: Create a shortcut to show global mappings with <leader><leader>
+wk.register({
+    ["<leader><leader>"] = {
+        function()
+            wk.show("", { mode = "n" })  -- Show all global mappings in normal mode
+        end,
+        "Show Global Mappings",
+    },
 })
 
+-- Treesitter configuration
 local treesitter_config = {
     ensure_installed = { 'lua', 'python', 'bash', 'rust', 'markdown', 'html' },
 
@@ -280,9 +229,8 @@ local treesitter_config = {
     textobjects = {
       select = {
         enable = true,
-        lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
+        lookahead = true,
         keymaps = {
-          -- You can use the capture groups defined in textobjects.scm
           ['aa'] = '@parameter.outer',
           ['ia'] = '@parameter.inner',
           ['af'] = '@function.outer',
@@ -293,7 +241,7 @@ local treesitter_config = {
       },
       move = {
         enable = true,
-        set_jumps = true, -- whether to set jumps in the jumplist
+        set_jumps = true,
         goto_next_start = {
           [']m'] = '@function.outer',
           [']]'] = '@class.outer',
@@ -336,4 +284,58 @@ vim.api.nvim_set_hl(0, '@lsp.typemod.variable.globalScope', { fg='white'})
 vim.api.nvim_set_hl(0, '@lsp.type.parameter', { fg='Purple' })
 vim.api.nvim_set_hl(0, '@lsp.type.property', { fg='crimson' })
 
+
+-- LSP keybindings
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+	callback = function(ev)
+		-- :help omnnifunc defaults to: crtl-x ctrl o
+		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+		-- Buffer local mappings
+		local opts = { buffer = ev.buf }
+
+		-- Go to references (gr)
+		vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+
+		-- Go to declaration (gD)
+		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+
+		-- Go to definition (gd)
+		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+
+		-- Go to implementation (gi)
+		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+
+		-- Hover documentation (K)
+		vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+
+		-- Rename symbol (<leader>rn)
+		vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+
+		-- Code actions (<leader>ca)
+		vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
+
+		-- Format code (<leader>cf)
+		vim.keymap.set('n', '<leader>cf', function()
+			vim.lsp.buf.format { async = true }
+		end, opts)
+
+		-- Diagnostics
+
+		-- Show diagnostics in floating window (<leader>e)
+		vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
+
+		-- Go to next diagnostic (]d)
+		vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
+
+		-- Go to previous diagnostic ([d)
+		vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+
+		-- Set location list to show diagnostics (<leader>q)
+		vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, opts)
+	end,
+})
+
+-- END ~/.config/nvim/init.lua --
 
